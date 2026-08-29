@@ -14,6 +14,7 @@ import '../widgets/category_filter_bar.dart';
 import '../widgets/story_card.dart';
 import 'about_page.dart';
 import 'comments_screen.dart';
+import 'story_detail_screen.dart';
 
 /// Main feed screen: live Hacker News stories with category filters, search,
 /// pull-to-refresh, and infinite scroll — matching the original app's logic.
@@ -168,6 +169,18 @@ class _HomeScreenState extends State<HomeScreen> {
   void _openComments(Story story) {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => CommentsScreen(story: story)),
+    );
+  }
+
+  void _openStory(Story story) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => StoryDetailScreen(
+          story: story,
+          savedController: widget.savedController,
+          settingsController: widget.settingsController,
+        ),
+      ),
     );
   }
 
@@ -365,10 +378,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       builder: (context, _) => StoryCard(
                         story: story,
                         isSaved: widget.savedController.isSaved(story),
-                        onTap: () => openStoryLink(
-                          story,
-                          openInApp: widget.settingsController.openInApp,
-                        ),
+                        onTap: () => _openStory(story),
                         onToggleSave: () =>
                             widget.savedController.toggle(story),
                         onShare: () => shareStory(story),
