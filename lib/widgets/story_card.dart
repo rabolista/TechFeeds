@@ -14,6 +14,7 @@ class StoryCard extends StatelessWidget {
     required this.onTap,
     required this.onToggleSave,
     required this.onShare,
+    this.onOpenComments,
   });
 
   final Story story;
@@ -21,6 +22,7 @@ class StoryCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onToggleSave;
   final VoidCallback onShare;
+  final VoidCallback? onOpenComments;
 
   @override
   Widget build(BuildContext context) {
@@ -69,9 +71,29 @@ class StoryCard extends StatelessWidget {
                   color: theme.colorScheme.primary,
                 ),
               ),
+              const SizedBox(height: 2),
+              Row(
+                children: [
+                  Icon(Icons.arrow_upward_rounded,
+                      size: 14, color: theme.colorScheme.outline),
+                  const SizedBox(width: 2),
+                  Text('${story.points}', style: theme.textTheme.labelSmall),
+                  const SizedBox(width: 12),
+                  Icon(Icons.mode_comment_outlined,
+                      size: 14, color: theme.colorScheme.outline),
+                  const SizedBox(width: 2),
+                  Text('${story.numComments}', style: theme.textTheme.labelSmall),
+                ],
+              ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
+                  if (onOpenComments != null)
+                    TextButton.icon(
+                      onPressed: onOpenComments,
+                      icon: const Icon(Icons.forum_outlined, size: 18),
+                      label: const Text('Discuss'),
+                    ),
                   TextButton.icon(
                     onPressed: onToggleSave,
                     icon: Icon(

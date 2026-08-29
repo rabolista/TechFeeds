@@ -4,6 +4,7 @@ import '../state/saved_stories_controller.dart';
 import '../state/settings_controller.dart';
 import '../utils/story_actions.dart';
 import '../widgets/story_card.dart';
+import 'comments_screen.dart';
 
 /// Saved (bookmarked) articles tab, for offline reading.
 class SavedScreen extends StatelessWidget {
@@ -56,6 +57,9 @@ class SavedScreen extends StatelessWidget {
                 ),
                 onToggleSave: () => savedController.toggle(story),
                 onShare: () => shareStory(story),
+                onOpenComments: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => CommentsScreen(story: story)),
+                ),
               );
             },
           );

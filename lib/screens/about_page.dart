@@ -4,16 +4,24 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'privacy_policy_page.dart';
 
-/// About screen — what the app is, what it's built with, and how to reach
-/// the developer. Mirrors the structure of Global Climate News's About page.
+/// About page: app info, developer credits, and support link — mirrors the
+/// structure of Global Climate News's About page.
 class AboutPage extends StatefulWidget {
-  const AboutPage({super.key});
+  const AboutPage({super.key, this.accentColor = const Color(0xFF0B72B9)});
+
+  final Color accentColor;
 
   @override
   State<AboutPage> createState() => _AboutPageState();
 }
 
 class _AboutPageState extends State<AboutPage> {
+  final Uri _paypalUrl = Uri.parse('https://paypal.me/rabolista');
+  final Uri _linkedInUrl = Uri.parse(
+    'https://www.linkedin.com/in/robert-allan-bolista/',
+  );
+  final Uri _websiteUrl = Uri.parse('https://www.rabolista.com');
+
   String _version = '';
 
   @override
@@ -28,103 +36,97 @@ class _AboutPageState extends State<AboutPage> {
     setState(() => _version = '${info.version} (${info.buildNumber})');
   }
 
-  Future<void> _emailDeveloper() async {
-    final uri = Uri(
-      scheme: 'mailto',
-      path: 'rabolista@gmail.com',
-      query: 'subject=${Uri.encodeComponent('Tech and Feeds')}',
-    );
-    await launchUrl(uri);
+  Future<void> _open(Uri url) async {
+    await launchUrl(url, mode: LaunchMode.externalApplication);
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final accentColor = widget.accentColor;
+
     return Scaffold(
       appBar: AppBar(title: const Text('About')),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(vertical: 20),
         children: [
-          Center(
-            child: Container(
-              width: 88,
-              height: 88,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(22),
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF0D1B4C), Color(0xFF00B4D8)],
+          Column(
+            children: [
+              Icon(Icons.rss_feed_rounded, size: 50, color: accentColor),
+              const SizedBox(height: 12),
+              const Text(
+                'Tech and Feeds',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 6),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Text(
+                  'Live technology headlines from Hacker News — curated into '
+                  'one clean, fast feed you can filter, search, and save.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                 ),
               ),
-              child: const Icon(Icons.podcasts_rounded,
-                  color: Colors.white, size: 44),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Center(
-            child: Text(
-              'Tech and Feeds',
-              style: theme.textTheme.headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.w800),
-            ),
-          ),
-          if (_version.isNotEmpty)
-            Center(
-              child: Text('Version $_version', style: theme.textTheme.bodySmall),
-            ),
-          const SizedBox(height: 24),
-          Text(
-            'Tech and Feeds pulls live technology headlines from Hacker News '
-            'into one clean, easy-to-read feed. No account, no ads, no '
-            'clutter.',
-            style: theme.textTheme.bodyLarge,
-          ),
-          const SizedBox(height: 20),
-          _Section(
-            title: 'What it does',
-            bullets: const [
-              'Live feed of the newest stories, straight from Hacker News.',
-              'Browse by topic: Apple, Android, AI, and Security.',
-              'Search headlines by keyword.',
-              'Pull to refresh and infinite scroll for older stories.',
-              'Save articles to read later, even offline.',
-              'Share any headline with the native share sheet.',
-              'Choose to open links inside the app or your default browser.',
-              'Light & dark mode, matching your device theme.',
+              if (_version.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Text(
+                  'Version $_version',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                ),
+              ],
             ],
           ),
-          const SizedBox(height: 20),
-          _Section(
-            title: 'What it\'s built with',
-            bullets: const [
-              'Framework: Flutter (Dart) — one codebase for iOS and Android.',
-              'Data source: the public Hacker News Algolia Search API.',
-              'No backend/server required.',
-            ],
-          ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 28),
+          const _SectionHeader(title: 'Built With'),
           ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.privacy_tip_outlined),
+            leading: Icon(Icons.flutter_dash_rounded, color: accentColor),
+            title: const Text('Flutter & Dart'),
+            subtitle: const Text(
+              "Google's UI toolkit for natively compiled iOS and Android apps",
+            ),
+          ),
+          ListTile(
+            leading: Icon(Icons.travel_explore, color: accentColor),
+            title: const Text('Hacker News (Algolia Search API)'),
+            subtitle: const Text('Public data source — no backend required'),
+          ),
+          const SizedBox(height: 8),
+          const _SectionHeader(title: 'Developer'),
+          ListTile(
+            leading: Icon(Icons.person, color: accentColor),
+            title: const Text('Robert Allan Bolista'),
+          ),
+          ListTile(
+            leading: Icon(Icons.link, color: accentColor),
+            title: const Text('LinkedIn Profile'),
+            onTap: () => _open(_linkedInUrl),
+          ),
+          ListTile(
+            leading: Icon(Icons.travel_explore, color: accentColor),
+            title: const Text('Website'),
+            onTap: () => _open(_websiteUrl),
+          ),
+          const SizedBox(height: 8),
+          const _SectionHeader(title: 'Legal'),
+          ListTile(
+            leading: Icon(Icons.privacy_tip_outlined, color: accentColor),
             title: const Text('Privacy Policy'),
-            trailing: const Icon(Icons.chevron_right_rounded),
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
             ),
           ),
+          const Divider(height: 32),
           ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.mail_outline_rounded),
-            title: const Text('Contact the developer'),
-            subtitle: const Text('rabolista@gmail.com'),
-            onTap: _emailDeveloper,
+            leading: const Icon(Icons.favorite, color: Colors.redAccent),
+            title: const Text('Support the Developer'),
+            onTap: () => _open(_paypalUrl),
           ),
-          const SizedBox(height: 12),
-          Center(
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
             child: Text(
-              'Made by Robert Allan Bolista',
-              style: theme.textTheme.bodySmall,
+              'Optional — opens PayPal in your browser. Nothing is unlocked '
+              'or required.',
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
           ),
         ],
@@ -133,34 +135,23 @@ class _AboutPageState extends State<AboutPage> {
   }
 }
 
-class _Section extends StatelessWidget {
-  const _Section({required this.title, required this.bullets});
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title});
 
   final String title;
-  final List<String> bullets;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title,
-            style:
-                theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-        const SizedBox(height: 8),
-        for (final bullet in bullets)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('•  '),
-                Expanded(child: Text(bullet)),
-              ],
-            ),
-          ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+      child: Text(
+        title.toUpperCase(),
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: Colors.grey,
+        ),
+      ),
     );
   }
 }

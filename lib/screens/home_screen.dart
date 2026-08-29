@@ -1,5 +1,9 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
+import '../data/feed_cache_store.dart';
 import '../models/story.dart';
 import '../models/story_category.dart';
 import '../services/hn_service.dart';
@@ -9,6 +13,7 @@ import '../utils/story_actions.dart';
 import '../widgets/category_filter_bar.dart';
 import '../widgets/story_card.dart';
 import 'about_page.dart';
+import 'comments_screen.dart';
 
 /// Main feed screen: live Hacker News stories with category filters, search,
 /// pull-to-refresh, and infinite scroll — matching the original app's logic.
@@ -32,18 +37,22 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   static const _service = HnService();
+  static const _cache = FeedCacheStore();
 
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
   StoryCategory _selectedCategory = StoryCategory.all;
+  FeedMode _mode = FeedMode.newest;
   String _query = '';
 
   final List<Story> _stories = [];
   int _page = 0;
+  bool _hasMore = true;
   bool _isLoadingInitial = true;
   bool _isLoadingMore = false;
   bool _hasError = false;
+  bool _isOffline = false;
 
   @override
   void initState() {
@@ -73,39 +82,69 @@ class _HomeScreenState extends State<HomeScreen> {
       _hasError = false;
     });
     try {
-      final stories = await _service.fetchStories(page: 0);
+      final stories = await _service.fetchStories(page: 0, mode: _mode);
       if (!mounted) return;
       setState(() {
         _stories
           ..clear()
           ..addAll(stories);
         _page = 1;
+        _hasMore = stories.isNotEmpty;
         _isLoadingInitial = false;
+        _isOffline = false;
       });
+      unawaited(_cache.save(jsonEncode(stories.map((s) => s.toJson()).toList())));
     } catch (_) {
+      if (!mounted) return;
+      final cached = await _loadFromCache();
       if (!mounted) return;
       setState(() {
         _isLoadingInitial = false;
-        _hasError = true;
+        _hasError = cached.isEmpty;
+        _isOffline = cached.isNotEmpty;
+        if (cached.isNotEmpty) {
+          _stories
+            ..clear()
+            ..addAll(cached);
+          _hasMore = false;
+        }
       });
     }
   }
 
+  Future<List<Story>> _loadFromCache() async {
+    final raw = await _cache.load();
+    if (raw == null || raw.isEmpty) return [];
+    try {
+      final list = jsonDecode(raw) as List<dynamic>;
+      return list.cast<Map<String, dynamic>>().map(Story.fromJson).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
   Future<void> _loadMore() async {
-    if (_isLoadingMore || _isLoadingInitial) return;
+    if (_isLoadingMore || _isLoadingInitial || !_hasMore) return;
     setState(() => _isLoadingMore = true);
     try {
-      final stories = await _service.fetchStories(page: _page);
+      final stories = await _service.fetchStories(page: _page, mode: _mode);
       if (!mounted) return;
       setState(() {
         _stories.addAll(stories);
         _page += 1;
+        _hasMore = stories.isNotEmpty;
         _isLoadingMore = false;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() => _isLoadingMore = false);
     }
+  }
+
+  void _setMode(FeedMode mode) {
+    if (mode == _mode) return;
+    setState(() => _mode = mode);
+    _loadInitial();
   }
 
   List<Story> get _filteredStories {
@@ -124,6 +163,12 @@ class _HomeScreenState extends State<HomeScreen> {
   void _openAbout() {
     Navigator.of(context)
         .push(MaterialPageRoute(builder: (_) => const AboutPage()));
+  }
+
+  void _openComments(Story story) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => CommentsScreen(story: story)),
+    );
   }
 
   void _toggleTheme() {
@@ -195,6 +240,27 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: SegmentedButton<FeedMode>(
+                  segments: const [
+                    ButtonSegment(
+                      value: FeedMode.newest,
+                      label: Text('Newest'),
+                      icon: Icon(Icons.new_releases_outlined),
+                    ),
+                    ButtonSegment(
+                      value: FeedMode.top,
+                      label: Text('Top'),
+                      icon: Icon(Icons.local_fire_department_outlined),
+                    ),
+                  ],
+                  selected: {_mode},
+                  onSelectionChanged: (selection) => _setMode(selection.first),
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
               child: CategoryFilterBar(
                 selectedCategory: _selectedCategory,
                 onSelected: (category) =>
@@ -202,6 +268,43 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 8)),
+            if (_isOffline)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .errorContainer
+                          .withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.cloud_off_rounded,
+                          size: 18,
+                          color: Theme.of(context).colorScheme.onErrorContainer,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            "Couldn't reach the feed — showing your last saved headlines",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color:
+                                  Theme.of(context).colorScheme.onErrorContainer,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             if (_isLoadingInitial)
               const SliverFillRemaining(
                 hasScrollBody: false,
@@ -269,6 +372,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         onToggleSave: () =>
                             widget.savedController.toggle(story),
                         onShare: () => shareStory(story),
+                        onOpenComments: () => _openComments(story),
                       ),
                     );
                   },
@@ -280,3 +384,4 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
