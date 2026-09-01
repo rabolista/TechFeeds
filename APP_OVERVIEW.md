@@ -48,7 +48,7 @@ digging through multiple sites or apps.
 - **Bundle ID**: `com.ionicframework.techfeed247968`
 - **Apple ID**: 1030689511
 - **SKU**: techandfeeds
-- **Version**: 1.5.0 (build 40)
+- **Version**: 1.5.1 (build 41)
 
 ## History
 

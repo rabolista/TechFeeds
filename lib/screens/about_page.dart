@@ -4,7 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'privacy_policy_page.dart';
 
-/// About page: app info, developer credits, and support link — mirrors the
+/// About page: app info, developer credits, and legal links — mirrors the
 /// structure of Global Climate News's About page.
 class AboutPage extends StatefulWidget {
   const AboutPage({super.key, this.accentColor = const Color(0xFF0B72B9)});
@@ -16,7 +16,6 @@ class AboutPage extends StatefulWidget {
 }
 
 class _AboutPageState extends State<AboutPage> {
-  final Uri _paypalUrl = Uri.parse('https://paypal.me/rabolista');
   final Uri _linkedInUrl = Uri.parse(
     'https://www.linkedin.com/in/robert-allan-bolista/',
   );
@@ -113,20 +112,6 @@ class _AboutPageState extends State<AboutPage> {
             title: const Text('Privacy Policy'),
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
-            ),
-          ),
-          const Divider(height: 32),
-          ListTile(
-            leading: const Icon(Icons.favorite, color: Colors.redAccent),
-            title: const Text('Support the Developer'),
-            onTap: () => _open(_paypalUrl),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-            child: Text(
-              'Optional — opens PayPal in your browser. Nothing is unlocked '
-              'or required.',
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
           ),
         ],
